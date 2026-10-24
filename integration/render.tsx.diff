@@ -1,0 +1,28 @@
+diff --git a/packages/client/ui-primitives/src/markdown/render.tsx b/packages/client/ui-primitives/src/markdown/render.tsx
+index cdb9afcbda..ccd182c218 100644
+--- a/packages/client/ui-primitives/src/markdown/render.tsx
++++ b/packages/client/ui-primitives/src/markdown/render.tsx
+@@ -26,6 +26,7 @@ import type { CodeToolbarLabels } from '../CodeToolbar.tsx'
+ import { CodeBlock } from './CodeBlock.tsx'
+ import { parseFileLink } from './file-link.ts'
+ import { renderTexToReact } from './katex.tsx'
++import { WIDGET_LANGS, WidgetSkeleton, renderWidget } from './WidgetBlock.tsx'
+ import { LinkIconMedium, classifyLinkPath } from '../LinkIcon.tsx'
+ import { useMarkdownDelegate } from './MarkdownDelegate.tsx'
+ import { HoverCard } from '../HoverCard.tsx'
+@@ -390,6 +391,15 @@ function renderCode(node: Md.Code, key: Key, context: MarkdownRenderContext): Re
+     // its text extraction saw the code block's trailing newline.
+     return <Fragment key={key}>{renderTexToReact(`${node.value}\n`, true)}</Fragment>
+   }
++  if (lang !== undefined && WIDGET_LANGS.has(lang)) {
++    // ```stats / ```flow / ```cards fences render as chat widgets. While
++    // streaming, the JSON prefix is closed so finished items appear one by
++    // one; a skeleton stands in until the first item is usable. Once settled,
++    // invalid JSON falls through to the ordinary code block.
++    const widget = renderWidget(lang, node.value, key, context.streaming)
++    if (widget !== null) return widget
++    if (context.streaming) return <WidgetSkeleton key={key} />
++  }
+   return (
+     <CodeBlock
+       key={key}
